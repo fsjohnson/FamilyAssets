@@ -1,0 +1,6 @@
+module Pods_FamilyAssets {
+  umbrella header "Pods-FamilyAssets-umbrella.h"
+
+  export *
+  module * { export * }
+}
