@@ -18,15 +18,22 @@ private struct Layout {
     static let textFieldBorderWidth: CGFloat = 1.5
     static let textFieldCornerRadius: CGFloat = 5
     static let submitButtonWidth: CGFloat = 100
+    static let privacyOffset: CGFloat = 5
+    static let termsOffset: CGFloat = 100
+    static let termsOfServiceURL: String = "https://www.familyassets.com/terms"
+    static let privacyURL: String = "https://www.familyassets.com/privacy"
+    static let baseURL: String = "https://www.familyassets.com/s/request/"
 }
 
-final class ViewController: UIViewController, UINavigationControllerDelegate, WKUIDelegate, WKNavigationDelegate {
+final class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate, UITextViewDelegate {
     
     private let logo = UIImageView()
     private let textField = TextField()
     private let submitButton = UIButton()
     private let webView = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
     private let hud = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.gray)
+    private let privacyAttributedTextView = UITextView()
+    private let termsAttributedTextView = UITextView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,6 +45,8 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
     }
     
     private func setUpView() {
+        navigationController?.setNavigationBarHidden(true, animated: false)
+        
         logo.image = UIImage(imageLiteralResourceName: "FamilyAssetsIcon")
         logo.contentMode = .scaleAspectFill
         
@@ -60,6 +69,33 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
         
         webView.uiDelegate = self
         
+        let privacyPolicy = "Privacy Policy"
+        if let url = URL(string: Layout.privacyURL) {
+            let privacyAttributedString = NSMutableAttributedString(string: privacyPolicy, attributes:
+                [NSAttributedStringKey.link: url,
+                 NSAttributedStringKey.font: UIFont.boldSystemFont(ofSize: 12)])
+            
+            privacyAttributedTextView.attributedText = privacyAttributedString
+            privacyAttributedTextView.isScrollEnabled = false
+            privacyAttributedTextView.textAlignment = .center
+            privacyAttributedTextView.textColor = .black
+            privacyAttributedTextView.delegate = self
+            privacyAttributedTextView.isEditable = false
+        }
+        
+        let termsOfService = "Terms of Service"
+        if let url = URL(string: Layout.termsOfServiceURL) {
+            let termsAttributedString = NSMutableAttributedString(string: termsOfService, attributes:
+                [NSAttributedStringKey.link: url,
+                 NSAttributedStringKey.font: UIFont.boldSystemFont(ofSize: 12)])
+            
+            termsAttributedTextView.attributedText = termsAttributedString
+            termsAttributedTextView.textAlignment = .center
+            termsAttributedTextView.isScrollEnabled = false
+            termsAttributedTextView.delegate = self
+            termsAttributedTextView.isEditable = false
+        }
+        
         setUpConstraints()
     }
     
@@ -67,6 +103,8 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
         view.addSubview(logo)
         view.addSubview(textField)
         view.addSubview(submitButton)
+        view.addSubview(privacyAttributedTextView)
+        view.addSubview(termsAttributedTextView)
         
         logo.snp.makeConstraints { make in
             make.size.equalTo(Layout.logoSize)
@@ -86,6 +124,16 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
             make.width.equalTo(Layout.submitButtonWidth)
             make.top.equalTo(textField.snp.bottom).offset(Layout.logoBottomOffset)
         }
+        
+        privacyAttributedTextView.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(termsAttributedTextView.snp.top).offset(-Layout.privacyOffset)
+        }
+        
+        termsAttributedTextView.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-Layout.termsOffset)
+        }
     }
     
     private func setUpDismissKeyboard() {
@@ -100,7 +148,6 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
     }
     
     @objc private func submit() {
-        let baseURL = "https://www.familyassets.com/s/request/"
         
         let noTextAlert = UIAlertController(title: "Oops", message: "You must input a code.", preferredStyle: UIAlertControllerStyle.alert)
         
@@ -112,7 +159,7 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
         
         UserDefaults.standard.set(text, forKey: "code")
         
-        let fullURL = baseURL + text
+        let fullURL = Layout.baseURL + text
         
         let webpageLoadAlert = UIAlertController(title: "Oops", message: "Something went wrong loading the page. Please verify the inputted code and try again.", preferredStyle: UIAlertControllerStyle.alert)
         guard let url = URL(string: fullURL) else {
@@ -120,9 +167,7 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
             self.present(webpageLoadAlert, animated: true, completion: nil)
             return
         }
-        
-        print("URL: \(url)")
-        
+                
         hud.center = view.center
         hud.startAnimating()
         view.addSubview(hud)
@@ -132,18 +177,23 @@ final class ViewController: UIViewController, UINavigationControllerDelegate, WK
         
         webView.navigationDelegate = self
         webView.allowsBackForwardNavigationGestures = true
-        
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         hud.stopAnimating()
         hud.removeFromSuperview()
         
-        let vc = UIViewController()
-        vc.view = webView
-        vc.view.backgroundColor = .black
+        if let url = webView.url, UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        }
+    }
+    
+    func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange) -> Bool {
+        if UIApplication.shared.canOpenURL(URL) {
+            UIApplication.shared.open(URL, options: [:], completionHandler: nil)
+        }
         
-        navigationController?.pushViewController(vc, animated: true)
+        return false
     }
     
 }
