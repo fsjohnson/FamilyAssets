@@ -19,7 +19,7 @@ private struct Layout {
     static let textFieldCornerRadius: CGFloat = 5
     static let submitButtonWidth: CGFloat = 100
     static let privacyOffset: CGFloat = 5
-    static let termsOffset: CGFloat = 100
+    static let termsOffset: CGFloat = 50
     static let termsOfServiceURL: String = "https://www.familyassets.com/terms"
     static let privacyURL: String = "https://www.familyassets.com/privacy"
     static let baseURL: String = "https://www.familyassets.com/s/request/"
