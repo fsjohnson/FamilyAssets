@@ -184,13 +184,21 @@ final class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate
         hud.removeFromSuperview()
         
         if let url = webView.url, UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            if #available(iOS 10.0, *) {
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            } else {
+                UIApplication.shared.openURL(url)
+            }
         }
     }
     
     func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange) -> Bool {
         if UIApplication.shared.canOpenURL(URL) {
-            UIApplication.shared.open(URL, options: [:], completionHandler: nil)
+            if #available(iOS 10.0, *) {
+                UIApplication.shared.open(URL, options: [:], completionHandler: nil)
+            } else {
+                UIApplication.shared.openURL(URL)
+            }
         }
         
         return false
